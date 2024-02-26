@@ -1,5 +1,21 @@
-group 'com.zzh.android_work'
-version '1.0-SNAPSHOT'
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+//apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply from: "./resolve_dependencies.gradle"
+
 
 buildscript {
     ext.kotlin_version = '1.6.10'
@@ -9,7 +25,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.2'
+        classpath 'com.android.tools.build:gradle:7.2.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -20,9 +36,6 @@ rootProject.allprojects {
         mavenCentral()
     }
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 31
@@ -41,10 +54,16 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 17
     }
+
 }
+
+
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    compileOnly files("$flutterRoot/bin/cache/artifacts/engine/android-arm/flutter.jar")
+    compileOnly 'androidx.annotation:annotation:1.1.0'
+
 }

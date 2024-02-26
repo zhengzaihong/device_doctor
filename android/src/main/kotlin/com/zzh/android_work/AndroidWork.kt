@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import com.zzh.android_work.utils.DeviceCheckUtils
 
 /**
  * create_user: zhengzaihong
@@ -35,7 +36,7 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         return true
     }
 
-    open fun getAndroidWorkProgress(): MutableList<String> {
+    open fun getRunningAppProcesses(): MutableList<String> {
         if (!checkContext()) {
             return mutableListOf()
         }
@@ -57,10 +58,8 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
     }
 
     private fun getActivePackages(): MutableList<String> {
-
         val activityManager: ActivityManager =
             applicationContext!!.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-
         val activePackages: MutableList<String> = mutableListOf()
         val processInfos: List<ActivityManager.RunningAppProcessInfo> =
             activityManager.runningAppProcesses
@@ -70,5 +69,9 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
             }
         }
         return activePackages
+    }
+
+    open fun checkDeviceIsEmulator(): Int {
+        return  DeviceCheckUtils.checkDeviceIsEmulator(applicationContext)
     }
 }

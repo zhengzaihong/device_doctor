@@ -1,5 +1,6 @@
 package com.zzh.android_work
 import android.util.Log
+import com.zzh.android_work.utils.DeviceCheckUtils
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -12,7 +13,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 * create_time: 13:51
 * describe: 原生通道消息处理
 */
-class MethodCallHandlerImpl(private val intentLauncher: IntentLauncher) : MethodCallHandler {
+class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler {
 
     private var methodChannel: MethodChannel? = null
 
@@ -44,11 +45,15 @@ class MethodCallHandlerImpl(private val intentLauncher: IntentLauncher) : Method
 
             when {
                 "getRunningAppProcesses".equals(call.method, ignoreCase = true) -> {
-                    intent?.let {
-                        intentLauncher.restartApp()
+                    plugin?.let {
+                       result.success( it.getRunningAppProcesses())
                     }
                 }
-
+                "checkDeviceIsEmulator".equals(call.method, ignoreCase = true) -> {
+                    plugin.let {
+                        result.success(it.checkDeviceIsEmulator())
+                    }
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -57,9 +62,8 @@ class MethodCallHandlerImpl(private val intentLauncher: IntentLauncher) : Method
     }
 
     companion object {
-
         const val methodChannelName = "flutter_native_android_work"
 
-        private const val TAG = "MethodCallHandlerImpl"
+        const val TAG = "AndroidWorkTag"
     }
 }
