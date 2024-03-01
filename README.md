@@ -1,7 +1,3 @@
-# android_work
-
-A new Flutter plugin project.
-
 ## 此库主要针对Android原生底层能力实现提供flutter，ios实现可能相对较少。
 
 ### 使用说明：
