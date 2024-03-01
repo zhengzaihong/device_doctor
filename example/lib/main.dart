@@ -1,6 +1,8 @@
+import 'dart:convert';
+
 import 'package:android_work_forzzh/android_work.dart';
 import 'package:flutter/material.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -26,15 +28,28 @@ class _MyAppState extends State<MyApp> {
 
             children: [
 
-              buildButton("获取进程", (){
-                const work = AndroidWork();
-                work.getRunningAppProcesses().then((value){
-                  print('-------------------11111111----------');
-                  print(value);
-                  print('--------------------22222222---------');
-                });
-              }),
+              buildButton("获取设备信息", () async {
+                List<Permission> permissions = <Permission>[
+                  Permission.phone
+                ];
 
+                for (var element in permissions) {
+                  element.request().then((value){
+                    print("------permissions：${value.name}");
+                  });
+                }
+                const work = AndroidWork();
+                print('--------------------await AndroidWork.platformVersion ${await work.platformVersion}');
+                print('--------------------await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
+                print('--------------------await AndroidWork.deviceModel ${await work.deviceModel}');
+                print('--------------------await AndroidWork.deviceManufacturer ${await work.deviceManufacturer}');
+                print('--------------------await AndroidWork.apiLevel ${await work.apiLevel}');
+                print('--------------------await AndroidWork.deviceName ${await work.deviceName}');
+                print('--------------------await AndroidWork.productName ${await work.productName}');
+                print('--------------------await AndroidWork.cpuName ${await work.cpuName}');
+                print('--------------------await AndroidWork.hardware ${await work.hardware}');
+
+              }),
             ],
           ),
         ),

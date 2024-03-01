@@ -1,6 +1,7 @@
 package com.zzh.android_work
+import android.Manifest
+import android.os.Build
 import android.util.Log
-import com.zzh.android_work.utils.DeviceCheckUtils
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -41,24 +42,49 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
 
-        call.run {
-
-            when {
-                "getRunningAppProcesses".equals(call.method, ignoreCase = true) -> {
-                    plugin?.let {
-                       result.success( it.getRunningAppProcesses())
-                    }
-                }
-                "checkDeviceIsEmulator".equals(call.method, ignoreCase = true) -> {
-                    plugin.let {
-                        result.success(it.checkDeviceIsEmulator())
-                    }
-                }
-                else -> {
-                    result.notImplemented()
+        when (call.method) {
+            "getPlatformVersion" -> {
+                result.success("Android " + Build.VERSION.RELEASE)
+            }
+            "getIMEINumber" -> {
+                val imeiNo: String? = plugin.getIMEINo()
+                if (imeiNo != null && imeiNo == Manifest.permission.READ_PHONE_STATE) {
+                    result.error(
+                        Manifest.permission.READ_PHONE_STATE,
+                        "Permission is not granted!",
+                        null
+                    )
+                } else if (!imeiNo.isNullOrEmpty()) {
+                    result.success(imeiNo)
                 }
             }
+            "getAPILevel" -> {
+                result.success(Build.VERSION.SDK_INT)
+            }
+            "getModel" -> {
+                result.success(Build.MODEL)
+            }
+            "getManufacturer" -> {
+                result.success(Build.MANUFACTURER)
+            }
+            "getDevice" -> {
+                result.success(Build.DEVICE)
+            }
+            "getProduct" -> {
+                result.success(Build.PRODUCT)
+            }
+            "getCPUType" -> {
+                result.success(Build.CPU_ABI)
+            }
+            "getHardware" -> {
+                result.success(Build.HARDWARE)
+            }
+            else -> {
+                result.notImplemented()
+            }
+
         }
+
     }
 
     companion object {

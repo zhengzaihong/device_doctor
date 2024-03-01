@@ -22,9 +22,7 @@ class AndroidWorkPlugin: FlutterPlugin, ActivityAware {
     workPlugin.setApplicationContext(binding.applicationContext)
     workPlugin.setActivity(null)
     impl.startListening(binding.binaryMessenger)
-
   }
-
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     workPlugin.setApplicationContext(null)

@@ -1,11 +1,17 @@
 package com.zzh.android_work
 
+import android.Manifest
 import android.app.Activity
-import android.app.ActivityManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.media.MediaDrm
 import android.os.Build
+import android.telephony.TelephonyManager
 import android.util.Log
-import com.zzh.android_work.utils.DeviceCheckUtils
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
+import java.util.UUID
+
 
 /**
  * create_user: zhengzaihong
@@ -36,42 +42,48 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         return true
     }
 
-    open fun getRunningAppProcesses(): MutableList<String> {
-        if (!checkContext()) {
-            return mutableListOf()
-        }
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
-            return getActivePackages()
-        }
-        return getActivePackagesCompat()
-    }
 
-    private fun getActivePackagesCompat(): MutableList<String> {
-        val activityManager: ActivityManager =
-            applicationContext!!.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val taskInfo: List<ActivityManager.RunningTaskInfo> = activityManager.getRunningTasks(100)
-        val activePackages: MutableList<String> = mutableListOf()
-        taskInfo.forEach {
-            activePackages.add((if (it.topActivity?.packageName == null) "" else it.topActivity!!.packageName))
-        }
-        return activePackages
-    }
-
-    private fun getActivePackages(): MutableList<String> {
-        val activityManager: ActivityManager =
-            applicationContext!!.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val activePackages: MutableList<String> = mutableListOf()
-        val processInfos: List<ActivityManager.RunningAppProcessInfo> =
-            activityManager.runningAppProcesses
-        for (processInfo in processInfos) {
-            if (processInfo.importance === ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                activePackages.addAll(processInfo.pkgList)
+    fun getIMEINo(): String? {
+        var imeiNumber: String? = ""
+        val telephonyManager =
+            activity!!.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        if (ContextCompat.checkSelfPermission(
+                activity!!,
+                Manifest.permission.READ_PHONE_STATE
+            ) !== PackageManager.PERMISSION_GRANTED
+        ) {
+            return Manifest.permission.READ_PHONE_STATE
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                imeiNumber = getDeviceUniqueID()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (telephonyManager?.imei != null) {
+                    imeiNumber = telephonyManager.imei
+                }
+            } else {
+                if (telephonyManager?.deviceId != null) {
+                    imeiNumber = telephonyManager.deviceId
+                }
             }
         }
-        return activePackages
+        return imeiNumber
     }
 
-    open fun checkDeviceIsEmulator(): Int {
-        return  DeviceCheckUtils.checkDeviceIsEmulator(applicationContext)
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    fun getDeviceUniqueID(): String? {
+        val wideVineUuid = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+        return try {
+            val wvDrm = MediaDrm(wideVineUuid)
+            val wideVineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+            val stringWithSymbols = wideVineId.contentToString()
+            val strWithoutBrackets = stringWithSymbols.replace("\\[".toRegex(), "")
+            val strWithoutBrackets1 = strWithoutBrackets.replace("]".toRegex(), "")
+            val strWithoutComma = strWithoutBrackets1.replace(",".toRegex(), "")
+            val strWithoutHyphen = strWithoutComma.replace("-".toRegex(), "")
+            val strWithoutSpace = strWithoutHyphen.replace(" ".toRegex(), "")
+            strWithoutSpace.substring(0, 15)
+        } catch (e: Exception) {
+            ""
+        }
     }
 }
