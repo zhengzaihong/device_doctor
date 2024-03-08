@@ -19,9 +19,7 @@ class AndroidWork {
   // ///获取Android运行的进程
   // Future<dynamic> getRunningAppProcesses() async => await _channel.invokeMethod('getRunningAppProcesses');
   //
-  // ///检查当前设备是否是模拟器 返回值大于3 基本就可以断定为 模拟器了
-  // Future<dynamic> isEmulator() async => await _channel.invokeMethod('checkDeviceIsEmulator');
-
+  Future<dynamic> isProxy(String url) async => await _channel.invokeMethod('isProxy', {"url": url});
 
   /// 获取Android版本
   Future<dynamic> get platformVersion async {

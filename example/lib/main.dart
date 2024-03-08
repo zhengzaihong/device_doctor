@@ -39,6 +39,9 @@ class _MyAppState extends State<MyApp> {
                   });
                 }
                 const work = AndroidWork();
+
+                print('--------------------await AndroidWork.isProxy ${await work.isProxy("https://www.baidu.com")}');
+
                 print('--------------------await AndroidWork.platformVersion ${await work.platformVersion}');
                 print('--------------------await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
                 print('--------------------await AndroidWork.deviceModel ${await work.deviceModel}');

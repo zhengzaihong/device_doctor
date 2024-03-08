@@ -5,11 +5,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaDrm
+import android.net.ConnectivityManager
+import android.net.VpnService
 import android.os.Build
 import android.telephony.TelephonyManager
+import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 
 
@@ -41,6 +46,30 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         }
         return true
     }
+
+
+    suspend fun isProxy(url: String?): Boolean {
+        if (TextUtils.isEmpty(url)) {
+            Log.wtf(TAG, "校验代理地址为空")
+            return false
+        }
+        val url = URL(url)
+        val connection = url.openConnection() as HttpURLConnection
+//        Log.wtf("-------------------", connection.content.toString())
+        return connection.usingProxy()
+    }
+    suspend fun isOpenVPN(): Boolean {
+//        val vpnService =  activity!!.getSystemService(Context.VPN_MANAGEMENT_SERVICE) as VpnService
+
+        val connectivityManager =
+            activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        if (networkInfo != null && networkInfo.isConnected) {
+            return  networkInfo.type == ConnectivityManager.TYPE_VPN
+        }
+        return false
+    }
+
 
 
     fun getIMEINo(): String? {

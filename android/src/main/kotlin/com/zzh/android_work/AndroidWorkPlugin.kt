@@ -19,6 +19,7 @@ class AndroidWorkPlugin: FlutterPlugin, ActivityAware {
   private var impl: MethodCallHandlerImpl = MethodCallHandlerImpl(workPlugin)
 
   override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    Https.handleSSLHandshake()
     workPlugin.setApplicationContext(binding.applicationContext)
     workPlugin.setActivity(null)
     impl.startListening(binding.binaryMessenger)
@@ -46,4 +47,5 @@ class AndroidWorkPlugin: FlutterPlugin, ActivityAware {
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     onAttachedToActivity(binding)
   }
+
 }

@@ -6,6 +6,10 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 /**
 * create_user: zhengzaihong
@@ -43,6 +47,15 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
 
         when (call.method) {
+            "isProxy" -> {
+                val url = call.argument<String?>("url")
+                GlobalScope.launch {
+                    val isProxy = async(Dispatchers.IO) {
+                        plugin.isProxy(url)
+                    }.await()
+                    result.success(isProxy)
+                }
+            }
             "getPlatformVersion" -> {
                 result.success("Android " + Build.VERSION.RELEASE)
             }
