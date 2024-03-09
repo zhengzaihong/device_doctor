@@ -6,15 +6,15 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaDrm
 import android.net.ConnectivityManager
-import android.net.VpnService
+import android.net.NetworkCapabilities
+import android.net.Proxy
 import android.os.Build
+import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 
 
@@ -48,28 +48,54 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
     }
 
 
-    suspend fun isProxy(url: String?): Boolean {
-        if (TextUtils.isEmpty(url)) {
-            Log.wtf(TAG, "校验代理地址为空")
+
+    suspend fun isProxy(): Boolean {
+        if (!checkContext()){
             return false
         }
-        val url = URL(url)
-        val connection = url.openConnection() as HttpURLConnection
-//        Log.wtf("-------------------", connection.content.toString())
-        return connection.usingProxy()
+        val IS_ICS_OR_LATER = Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH
+        val proxyAddress: String
+        val proxyPort: Int
+        if (IS_ICS_OR_LATER) {
+            val proxySettings =
+                Settings.System.getString(applicationContext!!.contentResolver, "http_proxy")
+            return !TextUtils.isEmpty(proxySettings)
+        } else {
+            proxyAddress = Proxy.getHost(applicationContext!!)
+            proxyPort = Proxy.getPort(applicationContext!!)
+        }
+        return !TextUtils.isEmpty(proxyAddress) && proxyPort != -1
     }
-    suspend fun isOpenVPN(): Boolean {
-//        val vpnService =  activity!!.getSystemService(Context.VPN_MANAGEMENT_SERVICE) as VpnService
 
+    suspend fun isOpenVPN(): Boolean? {
         val connectivityManager =
             activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val activeNetwork = connectivityManager?.activeNetwork
+            val caps =
+                connectivityManager?.getNetworkCapabilities(activeNetwork)
+            return caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val networks = connectivityManager?.allNetworks
+            networks?.let {
+                for (i in it) {
+                    val caps = connectivityManager.getNetworkCapabilities(i)
+                    if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) {
+                        return true
+                    }
+                }
+            }
+
+        }
         val networkInfo = connectivityManager.activeNetworkInfo
         if (networkInfo != null && networkInfo.isConnected) {
-            return  networkInfo.type == ConnectivityManager.TYPE_VPN
+            return networkInfo.type == ConnectivityManager.TYPE_VPN
         }
         return false
     }
-
 
 
     fun getIMEINo(): String? {

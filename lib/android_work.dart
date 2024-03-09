@@ -18,8 +18,12 @@ class AndroidWork {
 
   // ///获取Android运行的进程
   // Future<dynamic> getRunningAppProcesses() async => await _channel.invokeMethod('getRunningAppProcesses');
-  //
-  Future<dynamic> isProxy(String url) async => await _channel.invokeMethod('isProxy', {"url": url});
+
+  /// 判断是否为代理
+  Future<dynamic> isProxy() async => await _channel.invokeMethod('isProxy');
+
+  /// 判断是否开启VPN
+  Future<dynamic> isOpenVPN() async => await _channel.invokeMethod('isOpenVPN');
 
   /// 获取Android版本
   Future<dynamic> get platformVersion async {

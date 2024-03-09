@@ -48,12 +48,19 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
 
         when (call.method) {
             "isProxy" -> {
-                val url = call.argument<String?>("url")
                 GlobalScope.launch {
                     val isProxy = async(Dispatchers.IO) {
-                        plugin.isProxy(url)
+                        plugin.isProxy()
                     }.await()
                     result.success(isProxy)
+                }
+            }
+            "isOpenVPN" -> {
+                GlobalScope.launch {
+                    val isOpenVPN = async(Dispatchers.IO) {
+                        plugin.isOpenVPN()
+                    }.await()
+                    result.success(isOpenVPN)
                 }
             }
             "getPlatformVersion" -> {

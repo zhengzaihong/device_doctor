@@ -34,23 +34,23 @@ class _MyAppState extends State<MyApp> {
                 ];
 
                 for (var element in permissions) {
-                  element.request().then((value){
-                    print("------permissions：${value.name}");
+                  element.request().then((value) async {
+                    const work = AndroidWork();
+                    print('--await AndroidWork.isProxy ${await work.isProxy()}');
+                    print('--await AndroidWork.isOpenVPN ${await work.isOpenVPN()}');
+
+                    print('--await AndroidWork.platformVersion ${await work.platformVersion}');
+                    print('--await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
+                    print('--await AndroidWork.deviceModel ${await work.deviceModel}');
+                    print('--await AndroidWork.deviceManufacturer ${await work.deviceManufacturer}');
+                    print('--await AndroidWork.apiLevel ${await work.apiLevel}');
+                    print('--await AndroidWork.deviceName ${await work.deviceName}');
+                    print('--await AndroidWork.productName ${await work.productName}');
+                    print('--await AndroidWork.cpuName ${await work.cpuName}');
+                    print('--await AndroidWork.hardware ${await work.hardware}');
                   });
                 }
-                const work = AndroidWork();
 
-                print('--------------------await AndroidWork.isProxy ${await work.isProxy("https://www.baidu.com")}');
-
-                print('--------------------await AndroidWork.platformVersion ${await work.platformVersion}');
-                print('--------------------await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
-                print('--------------------await AndroidWork.deviceModel ${await work.deviceModel}');
-                print('--------------------await AndroidWork.deviceManufacturer ${await work.deviceManufacturer}');
-                print('--------------------await AndroidWork.apiLevel ${await work.apiLevel}');
-                print('--------------------await AndroidWork.deviceName ${await work.deviceName}');
-                print('--------------------await AndroidWork.productName ${await work.productName}');
-                print('--------------------await AndroidWork.cpuName ${await work.cpuName}');
-                print('--------------------await AndroidWork.hardware ${await work.hardware}');
 
               }),
             ],
