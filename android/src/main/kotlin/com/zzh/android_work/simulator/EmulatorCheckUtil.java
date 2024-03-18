@@ -4,11 +4,24 @@ import static android.content.Context.SENSOR_SERVICE;
 import static com.zzh.android_work.simulator.CheckResult.RESULT_EMULATOR;
 import static com.zzh.android_work.simulator.CheckResult.RESULT_MAYBE_EMULATOR;
 import static com.zzh.android_work.simulator.CheckResult.RESULT_UNKNOWN;
+import static com.zzh.android_work.simulator.Tools.getInstalledSimulatorPackages;
+import static com.zzh.android_work.simulator.Tools.getSimulatorBrand;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -31,22 +44,12 @@ public class EmulatorCheckUtil {
         return SingletonHolder.INSTANCE;
     }
 
-    public boolean readSysProperty(Context context, EmulatorCheckCallback callback) {
+    public void readSysProperty(Context context, EmulatorCheckCallback callback) {
         if (context == null)
             throw new IllegalArgumentException("context must not be null");
 
         int suspectCount = 0;
 
-        //检测硬件名称
-        CheckResult hardwareResult = checkFeaturesByHardware();
-        switch (hardwareResult.result) {
-            case RESULT_MAYBE_EMULATOR:
-                ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("hardware = " + hardwareResult.value);
-                return true;
-        }
 
         //检测渠道
         CheckResult flavorResult = checkFeaturesByFlavor();
@@ -56,7 +59,7 @@ public class EmulatorCheckUtil {
                 break;
             case RESULT_EMULATOR:
                 if (callback != null) callback.findEmulator("flavor = " + flavorResult.value);
-                return true;
+                return ;
         }
 
         //检测设备型号
@@ -67,7 +70,7 @@ public class EmulatorCheckUtil {
                 break;
             case RESULT_EMULATOR:
                 if (callback != null) callback.findEmulator("model = " + modelResult.value);
-                return true;
+                return ;
         }
 
         //检测硬件制造商
@@ -79,7 +82,7 @@ public class EmulatorCheckUtil {
             case RESULT_EMULATOR:
                 if (callback != null)
                     callback.findEmulator("manufacturer = " + manufacturerResult.value);
-                return true;
+                return ;
         }
 
         //检测主板名称
@@ -90,7 +93,7 @@ public class EmulatorCheckUtil {
                 break;
             case RESULT_EMULATOR:
                 if (callback != null) callback.findEmulator("board = " + boardResult.value);
-                return true;
+                return ;
         }
 
         //检测主板平台
@@ -101,7 +104,7 @@ public class EmulatorCheckUtil {
                 break;
             case RESULT_EMULATOR:
                 if (callback != null) callback.findEmulator("platform = " + platformResult.value);
-                return true;
+                return ;
         }
 
         //检测基带信息
@@ -112,16 +115,12 @@ public class EmulatorCheckUtil {
                 break;
             case RESULT_EMULATOR:
                 if (callback != null) callback.findEmulator("baseBand = " + baseBandResult.value);
-                return true;
+                return ;
         }
 
         //检测传感器数量
         int sensorNumber = getSensorNumber(context);
         if (sensorNumber <= 7) ++suspectCount;
-
-        //检测已安装第三方应用数量
-        int userAppNumber = getUserAppNumber();
-        if (userAppNumber <= 5) ++suspectCount;
 
         //检测是否支持闪光灯
         boolean supportCameraFlash = supportCameraFlash(context);
@@ -137,69 +136,62 @@ public class EmulatorCheckUtil {
         boolean hasLightSensor = hasLightSensor(context);
         if (!hasLightSensor) ++suspectCount;
 
+        boolean hasGPS = supportGPS(context);
+        if (!hasGPS) ++suspectCount;
+
+        boolean hasTemperature = supportTemperature(context);
+        if (!hasTemperature) ++suspectCount;
+
+        boolean hasSensorLight = supportSensorLight(context);
+        if (!hasSensorLight) ++suspectCount;
+
+        if(Tools.isSimulator(context)){
+            ++suspectCount;
+        }
+        /// 直接检查出是主流，模拟器
+        if(!TextUtils.isEmpty(isSimulatorHardware())){
+            suspectCount+=100;
+        }
+
+        if(!TextUtils.isEmpty(checkHasSimulatorMainPackage(context))){
+            ++suspectCount;
+        }
+        if(checkIsNotRealPhone()){
+            ++suspectCount;
+        }
+        if(checkPipes()){
+            ++suspectCount;
+        }
+        if(isYeShenEmulator()){
+            ++suspectCount;
+        }
+
         //检测进程组信息
         CheckResult cgroupResult = checkFeaturesByCgroup();
         if (cgroupResult.result == RESULT_MAYBE_EMULATOR) ++suspectCount;
-
         if (callback != null) {
-            StringBuffer stringBuffer = new StringBuffer("Test start")
-                    .append("\r\n").append("hardware = ").append(hardwareResult.value)
-                    .append("\r\n").append("flavor = ").append(flavorResult.value)
-                    .append("\r\n").append("model = ").append(modelResult.value)
-                    .append("\r\n").append("manufacturer = ").append(manufacturerResult.value)
-                    .append("\r\n").append("board = ").append(boardResult.value)
-                    .append("\r\n").append("platform = ").append(platformResult.value)
-                    .append("\r\n").append("baseBand = ").append(baseBandResult.value)
-                    .append("\r\n").append("sensorNumber = ").append(sensorNumber)
-                    .append("\r\n").append("userAppNumber = ").append(userAppNumber)
-                    .append("\r\n").append("supportCamera = ").append(supportCamera)
-                    .append("\r\n").append("supportCameraFlash = ").append(supportCameraFlash)
-                    .append("\r\n").append("supportBluetooth = ").append(supportBluetooth)
-                    .append("\r\n").append("hasLightSensor = ").append(hasLightSensor)
-                    .append("\r\n").append("cgroupResult = ").append(cgroupResult.value)
-                    .append("\r\n").append("suspectCount = ").append(suspectCount);
-            callback.findEmulator(stringBuffer.toString());
+            Map<Object,Object> map = new HashMap<>();
+            map.put("hardware",getProperty("ro.hardware"));
+            map.put("flavor",flavorResult.value);
+            map.put("model",modelResult.value);
+            map.put("manufacturer",manufacturerResult.value);
+            map.put("board",boardResult.value);
+            map.put("platform",platformResult.value);
+            map.put("baseBand",baseBandResult.value);
+            map.put("sensorNumber",sensorNumber);
+            map.put("supportCamera",supportCamera);
+            map.put("supportCameraFlash",supportCameraFlash);
+            map.put("supportBluetooth",supportBluetooth);
+            map.put("hasLightSensor",hasLightSensor);
+            map.put("cgroupResult",cgroupResult.value);
+            map.put("value",suspectCount);
+            callback.findEmulator(map);
         }
-        //嫌疑值大于3，认为是模拟器
-        return suspectCount > 3;
     }
 
-    private int getUserAppNum(String userApps) {
-        if (TextUtils.isEmpty(userApps)) return 0;
-        String[] result = userApps.split("package:");
-        return result.length;
-    }
-
-    private String getProperty(String propName) {
+    private static String getProperty(String propName) {
         String property = CommandUtil.getSingleInstance().getProperty(propName);
         return TextUtils.isEmpty(property) ? null : property;
-    }
-
-    /**
-     * 特征参数-硬件名称
-     *
-     * @return 0表示可能是模拟器，1表示模拟器，2表示可能是真机
-     */
-    private CheckResult checkFeaturesByHardware() {
-        String hardware = getProperty("ro.hardware");
-        if (null == hardware) return new CheckResult(RESULT_MAYBE_EMULATOR, null);
-        int result;
-        String tempValue = hardware.toLowerCase();
-        switch (tempValue) {
-            case "ttvm"://天天模拟器
-            case "nox"://夜神模拟器
-            case "cancro"://网易MUMU模拟器
-            case "intel"://逍遥模拟器
-            case "vbox":
-            case "vbox86"://腾讯手游助手
-            case "android_x86"://雷电模拟器
-                result = RESULT_EMULATOR;
-                break;
-            default:
-                result = RESULT_UNKNOWN;
-                break;
-        }
-        return new CheckResult(result, hardware);
     }
 
     /**
@@ -304,13 +296,6 @@ public class EmulatorCheckUtil {
         return sm.getSensorList(Sensor.TYPE_ALL).size();
     }
 
-    /**
-     * 获取已安装第三方应用数量
-     */
-    private int getUserAppNumber() {
-        String userApps = CommandUtil.getSingleInstance().exec("pm list package -3");
-        return getUserAppNum(userApps);
-    }
 
     /**
      * 是否支持相机
@@ -334,6 +319,28 @@ public class EmulatorCheckUtil {
     }
 
     /**
+     * 是否支GPS
+     */
+    private boolean supportGPS(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+    }
+
+    /**
+     * 是否支温度传感器
+     */
+    private boolean supportTemperature(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_AMBIENT_TEMPERATURE);
+    }
+
+
+    /**
+     * 是否支持光感
+     */
+    private boolean supportSensorLight(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
+    }
+
+    /**
      * 判断是否存在光传感器来判断是否为模拟器
      * 部分真机也不存在温度和压力传感器。其余传感器模拟器也存在。
      *
@@ -354,4 +361,131 @@ public class EmulatorCheckUtil {
         if (null == filter) return new CheckResult(RESULT_MAYBE_EMULATOR, null);
         return new CheckResult(RESULT_UNKNOWN, filter);
     }
+
+
+
+
+
+
+
+    //检查是否包含模拟器进程包名
+    public static String checkHasSimulatorMainPackage(Context context) {
+        List pathList = getInstalledSimulatorPackages(context);
+        return getSimulatorBrand(pathList);
+    }
+
+    public static String isSimulatorHardware() {
+        String result = "";
+        String hardware = getProperty("ro.hardware");
+        String tempValue = hardware.toLowerCase();
+        if(tempValue.startsWith("cancro")){
+            result = "MUMU模拟器";
+        }else if(tempValue.contains("nox")){
+            result = "夜神模拟器";
+        }else if(tempValue.equals("android_x86") || tempValue.equals("qcom")){
+            result= "雷电模拟器";
+        }
+        return result;
+    }
+
+
+
+    /*
+     *用途:根据CPU是否为电脑来判断是否为模拟器
+     *返回:true 为模拟器
+     */
+    private static boolean checkIsNotRealPhone() {
+        String cpuInfo = readCpuInfo();
+        if ((cpuInfo.contains("intel") || cpuInfo.contains("amd"))) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     *用途:根据CPU是否为电脑来判断是否为模拟器(子方法)
+     *返回:String
+     */
+    private static String readCpuInfo() {
+        String result = "";
+        try {
+            String[] args = {"/system/bin/cat", "/proc/cpuinfo"};
+            ProcessBuilder cmd = new ProcessBuilder(args);
+
+            Process process = cmd.start();
+            StringBuffer sb = new StringBuffer();
+            String readLine = "";
+            BufferedReader responseReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "utf-8"));
+            while ((readLine = responseReader.readLine()) != null) {
+                sb.append(readLine);
+            }
+            responseReader.close();
+            result = sb.toString().toLowerCase();
+        } catch (IOException ex) {
+        }
+        return result;
+    }
+
+    /*
+     *用途:检测模拟器的特有文件
+     *返回:true 为模拟器
+     */
+    private static String[] known_pipes = {"/dev/socket/qemud", "/dev/qemu_pipe"};
+    private static boolean checkPipes() {
+        for (int i = 0; i < known_pipes.length; i++) {
+            String pipes = known_pipes[i];
+            File qemu_socket = new File(pipes);
+            if (qemu_socket.exists()) {
+                Log.v("Result:", "Find pipes!");
+                return true;
+            }
+        }
+        Log.i("Result:", "Not Find pipes!");
+        return false;
+    }
+
+
+    //****************适配夜神模拟器*******************
+    //获取 cpu 信息
+    private static String getCpuInfo() {
+        String[] abis;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            abis = Build.SUPPORTED_ABIS;
+        } else {
+            abis = new String[]{Build.CPU_ABI, Build.CPU_ABI2};
+        }
+        StringBuilder abiStr = new StringBuilder();
+        for (String abi : abis) {
+            abiStr.append(abi);
+            abiStr.append(',');
+        }
+
+        return abiStr.toString();
+    }
+
+
+
+
+
+    // 通过cpu判断是否模拟器 ,适配夜神
+    private static boolean isYeShenEmulator() {
+        String abiStr = getCpuInfo();
+        if (abiStr != null && abiStr.length() > 0) {
+            boolean isSupportX86 = false;
+            boolean isSupportArm = false;
+
+            if (abiStr.contains("x86_64") || abiStr.contains("x86")) {
+                isSupportX86 = true;
+            }
+            if (abiStr.contains("armeabi") || abiStr.contains("armeabi-v7a") || abiStr.contains("arm64-v8a")) {
+                isSupportArm = true;
+            }
+            if (isSupportX86 && isSupportArm) {
+                //同时拥有X86和arm的判断为模拟器。
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -57,7 +57,7 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
     }
 
     // 检查是否是模拟器 同步
-    fun isSimulator(callback: (info: String) -> Unit) {
+    fun isSimulator(callback: (info: Any) -> Unit) {
         if (!checkContext()){
             return
         }

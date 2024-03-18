@@ -37,23 +37,29 @@ class _MyAppState extends State<MyApp> {
                   element.request().then((value) async {
                     const work = AndroidWork();
 
-                    print('--await AndroidWork.isSimulator ${await work.isSimulator()}');
-                    print('--await AndroidWork.getSimulatorInfo ${await work.getSimulatorInfo()}');
+                    work.isSimulator().then((value){
+                      // print("------------------value:${jsonEncode(value)}");
+                      final isSimulator = value["value"]>3;
+                        print("-----------------isSimulator:$isSimulator");
+                    });
 
-
-
-                    print('--await AndroidWork.isProxy ${await work.isProxy()}');
-                    print('--await AndroidWork.isOpenVPN ${await work.isOpenVPN()}');
-
-                    print('--await AndroidWork.platformVersion ${await work.platformVersion}');
-                    print('--await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
-                    print('--await AndroidWork.deviceModel ${await work.deviceModel}');
-                    print('--await AndroidWork.deviceManufacturer ${await work.deviceManufacturer}');
-                    print('--await AndroidWork.apiLevel ${await work.apiLevel}');
-                    print('--await AndroidWork.deviceName ${await work.deviceName}');
-                    print('--await AndroidWork.productName ${await work.productName}');
-                    print('--await AndroidWork.cpuName ${await work.cpuName}');
-                    print('--await AndroidWork.hardware ${await work.hardware}');
+                    // print('--await AndroidWork.isSimulator ${await work.isSimulator()}');
+                    // print('--await AndroidWork.getSimulatorInfo ${await work.getSimulatorInfo()}');
+                    //
+                    //
+                    //
+                    // print('--await AndroidWork.isProxy ${await work.isProxy()}');
+                    // print('--await AndroidWork.isOpenVPN ${await work.isOpenVPN()}');
+                    //
+                    // print('--await AndroidWork.platformVersion ${await work.platformVersion}');
+                    // print('--await AndroidWork.deviceIMEINumber ${await work.deviceIMEINumber}');
+                    // print('--await AndroidWork.deviceModel ${await work.deviceModel}');
+                    // print('--await AndroidWork.deviceManufacturer ${await work.deviceManufacturer}');
+                    // print('--await AndroidWork.apiLevel ${await work.apiLevel}');
+                    // print('--await AndroidWork.deviceName ${await work.deviceName}');
+                    // print('--await AndroidWork.productName ${await work.productName}');
+                    // print('--await AndroidWork.cpuName ${await work.cpuName}');
+                    // print('--await AndroidWork.hardware ${await work.hardware}');
                   });
                 }
 

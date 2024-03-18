@@ -1,5 +1,5 @@
 package com.zzh.android_work.simulator;
 
 public interface EmulatorCheckCallback {
-    void findEmulator(String emulatorInfo);
+    void findEmulator(Object emulatorInfo);
 }
