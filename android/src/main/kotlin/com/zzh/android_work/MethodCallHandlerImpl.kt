@@ -47,6 +47,17 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
 
         when (call.method) {
+
+            "getSimulatorInfo" -> {
+               result.success(plugin.getSimulatorInfo())
+            }
+
+            "isSimulator" -> {
+                plugin.isSimulator {
+                    result.success(it)
+                }
+            }
+
             "isProxy" -> {
                 GlobalScope.launch {
                     val isProxy = async(Dispatchers.IO) {
@@ -63,6 +74,9 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
                     result.success(isOpenVPN)
                 }
             }
+
+
+
             "getPlatformVersion" -> {
                 result.success("Android " + Build.VERSION.RELEASE)
             }

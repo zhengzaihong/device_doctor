@@ -36,6 +36,12 @@ class _MyAppState extends State<MyApp> {
                 for (var element in permissions) {
                   element.request().then((value) async {
                     const work = AndroidWork();
+
+                    print('--await AndroidWork.isSimulator ${await work.isSimulator()}');
+                    print('--await AndroidWork.getSimulatorInfo ${await work.getSimulatorInfo()}');
+
+
+
                     print('--await AndroidWork.isProxy ${await work.isProxy()}');
                     print('--await AndroidWork.isOpenVPN ${await work.isOpenVPN()}');
 

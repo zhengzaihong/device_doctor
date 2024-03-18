@@ -16,8 +16,11 @@ class AndroidWork {
 
   final MethodChannel _channel;
 
-  // ///获取Android运行的进程
-  // Future<dynamic> getRunningAppProcesses() async => await _channel.invokeMethod('getRunningAppProcesses');
+  /// 判断是否为模拟器
+  Future<dynamic> isSimulator() async => await _channel.invokeMethod('isSimulator');
+
+  /// 获取模拟器信息
+  Future<dynamic> getSimulatorInfo() async => await _channel.invokeMethod('getSimulatorInfo');
 
   /// 判断是否为代理
   Future<dynamic> isProxy() async => await _channel.invokeMethod('isProxy');

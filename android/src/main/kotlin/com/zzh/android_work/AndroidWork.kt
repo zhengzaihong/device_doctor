@@ -14,7 +14,8 @@ import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
+import com.zzh.android_work.simulator.EmulatorCheckUtil
+import com.zzh.android_work.simulator.Tools
 import java.util.UUID
 
 
@@ -47,6 +48,21 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         return true
     }
 
+
+    fun getSimulatorInfo(): MutableList<Any?>? {
+        if (!checkContext()){
+            return null
+        }
+        return Tools.getSimulatorInfo(applicationContext!!)
+    }
+
+    // 检查是否是模拟器 同步
+    fun isSimulator(callback: (info: String) -> Unit) {
+        if (!checkContext()){
+            return
+        }
+        EmulatorCheckUtil.getSingleInstance().readSysProperty(applicationContext!!) { emulatorInfo -> callback.invoke(emulatorInfo) }
+    }
 
 
     suspend fun isProxy(): Boolean {
@@ -102,23 +118,16 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         var imeiNumber: String? = ""
         val telephonyManager =
             activity!!.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        if (ContextCompat.checkSelfPermission(
-                activity!!,
-                Manifest.permission.READ_PHONE_STATE
-            ) !== PackageManager.PERMISSION_GRANTED
-        ) {
-            return Manifest.permission.READ_PHONE_STATE
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return getDeviceUniqueID()
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (telephonyManager?.imei != null) {
+                return telephonyManager.imei
+            }
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                imeiNumber = getDeviceUniqueID()
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (telephonyManager?.imei != null) {
-                    imeiNumber = telephonyManager.imei
-                }
-            } else {
-                if (telephonyManager?.deviceId != null) {
-                    imeiNumber = telephonyManager.deviceId
-                }
+            if (telephonyManager?.deviceId != null) {
+                return telephonyManager.deviceId
             }
         }
         return imeiNumber
