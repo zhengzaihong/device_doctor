@@ -90,6 +90,7 @@ public class Tools {
             String packageName = info.activityInfo.packageName;
             CharSequence cls = info.activityInfo.name;
             CharSequence name = info.activityInfo.loadLabel(context.getPackageManager());
+//            System.out.println("packageName:" + packageName + " cls:" + cls + " name:" + name);
             if (!TextUtils.isEmpty(packageName)) {
                 if (packageName.contains("bluestacks")) {
                     list.add("蓝叠");

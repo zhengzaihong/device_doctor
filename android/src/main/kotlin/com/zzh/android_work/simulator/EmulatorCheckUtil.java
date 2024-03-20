@@ -380,9 +380,9 @@ public class EmulatorCheckUtil {
         String tempValue = hardware.toLowerCase();
         if(tempValue.startsWith("cancro")){
             result = "MUMU模拟器";
-        }else if(tempValue.contains("nox")){
+        }else if(tempValue.contains("nox") || tempValue.contains("x86")){
             result = "夜神模拟器";
-        }else if(tempValue.equals("android_x86") || tempValue.equals("qcom")){
+        }else if(tempValue.contains("android_x86") || tempValue.contains("qcom")){
             result= "雷电模拟器";
         }
         return result;
