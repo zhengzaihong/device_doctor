@@ -53,69 +53,38 @@ public class EmulatorCheckUtil {
 
         //检测渠道
         CheckResult flavorResult = checkFeaturesByFlavor();
-        switch (flavorResult.result) {
-            case RESULT_MAYBE_EMULATOR:
-                ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("flavor = " + flavorResult.value);
-                return ;
+        if(flavorResult.result == RESULT_MAYBE_EMULATOR){
+            ++suspectCount;
         }
 
         //检测设备型号
         CheckResult modelResult = checkFeaturesByModel();
-        switch (modelResult.result) {
-            case RESULT_MAYBE_EMULATOR:
+        if (modelResult.result == RESULT_MAYBE_EMULATOR) {
                 ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("model = " + modelResult.value);
-                return ;
         }
 
         //检测硬件制造商
         CheckResult manufacturerResult = checkFeaturesByManufacturer();
-        switch (manufacturerResult.result) {
-            case RESULT_MAYBE_EMULATOR:
+        if (manufacturerResult.result == RESULT_MAYBE_EMULATOR) {
                 ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null)
-                    callback.findEmulator("manufacturer = " + manufacturerResult.value);
-                return ;
         }
 
         //检测主板名称
         CheckResult boardResult = checkFeaturesByBoard();
-        switch (boardResult.result) {
-            case RESULT_MAYBE_EMULATOR:
+        if (boardResult.result == RESULT_MAYBE_EMULATOR) {
                 ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("board = " + boardResult.value);
-                return ;
         }
 
         //检测主板平台
         CheckResult platformResult = checkFeaturesByPlatform();
-        switch (platformResult.result) {
-            case RESULT_MAYBE_EMULATOR:
+        if (platformResult.result == RESULT_MAYBE_EMULATOR) {
                 ++suspectCount;
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("platform = " + platformResult.value);
-                return ;
         }
 
         //检测基带信息
         CheckResult baseBandResult = checkFeaturesByBaseBand();
-        switch (baseBandResult.result) {
-            case RESULT_MAYBE_EMULATOR:
+        if (baseBandResult.result == RESULT_MAYBE_EMULATOR) {
                 suspectCount += 2;//模拟器基带信息为null的情况概率相当大
-                break;
-            case RESULT_EMULATOR:
-                if (callback != null) callback.findEmulator("baseBand = " + baseBandResult.value);
-                return ;
         }
 
         //检测传感器数量
@@ -168,7 +137,10 @@ public class EmulatorCheckUtil {
 
         //检测进程组信息
         CheckResult cgroupResult = checkFeaturesByCgroup();
-        if (cgroupResult.result == RESULT_MAYBE_EMULATOR) ++suspectCount;
+        if (cgroupResult.result == RESULT_MAYBE_EMULATOR){
+            ++suspectCount;
+        }
+
         if (callback != null) {
             Map<Object,Object> map = new HashMap<>();
             map.put("hardware",getProperty("ro.hardware"));
