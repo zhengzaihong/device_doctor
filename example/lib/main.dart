@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
                     const work = AndroidWork();
 
                     work.isSimulator().then((value){
-                      // print("------------------value:${jsonEncode(value)}");
+                      print("------------------value:${jsonEncode(value)}");
                       final isSimulator = value["value"]>3;
                         print("-----------------isSimulator:$isSimulator");
                     });

@@ -154,7 +154,7 @@ public class EmulatorCheckUtil {
         }
 
         if(!TextUtils.isEmpty(checkHasSimulatorMainPackage(context))){
-            ++suspectCount;
+            suspectCount+=3;
         }
         if(checkIsNotRealPhone()){
             ++suspectCount;
