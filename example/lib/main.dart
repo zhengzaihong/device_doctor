@@ -37,11 +37,15 @@ class _MyAppState extends State<MyApp> {
                   element.request().then((value) async {
                     const work = AndroidWork();
 
-                    work.isSimulator().then((value){
-                      print("------------------value:${jsonEncode(value)}");
-                      final isSimulator = value["value"]>3;
-                        print("-----------------isSimulator:$isSimulator");
+                    work.isRootEnv().then((value){
+                      print("------------------root:$value");
                     });
+
+                    // work.isSimulator().then((value){
+                    //   print("------------------value:${jsonEncode(value)}");
+                    //   final isSimulator = value["value"]>3;
+                    //     print("-----------------isSimulator:$isSimulator");
+                    // });
 
                     // print('--await AndroidWork.isSimulator ${await work.isSimulator()}');
                     // print('--await AndroidWork.getSimulatorInfo ${await work.getSimulatorInfo()}');

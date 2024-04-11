@@ -75,7 +75,14 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
                 }
             }
 
-
+            "isRootEnv" -> {
+                GlobalScope.launch {
+                    val root = async(Dispatchers.IO) {
+                        plugin.isRoot()
+                    }.await()
+                    result.success(root)
+                }
+            }
 
             "getPlatformVersion" -> {
                 result.success("Android " + Build.VERSION.RELEASE)

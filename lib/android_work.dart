@@ -28,6 +28,9 @@ class AndroidWork {
   /// 判断是否开启VPN
   Future<dynamic> isOpenVPN() async => await _channel.invokeMethod('isOpenVPN');
 
+  /// 判断是否在root环境下
+  Future<dynamic> isRootEnv() async => await _channel.invokeMethod('isRootEnv');
+
   /// 获取Android版本
   Future<dynamic> get platformVersion async {
     return await _channel.invokeMethod('getPlatformVersion');

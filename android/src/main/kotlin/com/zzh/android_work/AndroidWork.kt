@@ -1,9 +1,7 @@
 package com.zzh.android_work
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.media.MediaDrm
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -17,6 +15,9 @@ import androidx.annotation.RequiresApi
 import com.zzh.android_work.simulator.EmulatorCheckUtil
 import com.zzh.android_work.simulator.Tools
 import java.util.UUID
+import java.io.File
+import java.io.DataOutputStream
+
 
 
 /**
@@ -62,6 +63,38 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
             return
         }
         EmulatorCheckUtil.getSingleInstance().readSysProperty(applicationContext!!) { emulatorInfo -> callback.invoke(emulatorInfo) }
+    }
+
+    suspend fun isRoot(): Boolean {
+        if (!checkContext()){
+            return false
+        }
+        var process:Process?  = null
+        try {
+            process = Runtime.getRuntime().exec("su")
+            var os: DataOutputStream = DataOutputStream(process.getOutputStream())
+            os.writeBytes("echo root\n")
+            os.writeBytes("exit\n")
+            os.flush()
+            process?.waitFor()
+            if (process?.exitValue() == 0) {
+                return true
+            }
+
+            var file: File = File("/system/bin/su")
+            if (file.exists()) {
+                return true
+            }
+            var buildTags: String? = Build.TAGS
+            if (buildTags != null && buildTags.contains("test-keys")) {
+                return true
+            }
+        } catch (e: Exception) {
+          return false
+        } finally {
+            process?.destroy()
+        }
+        return false
     }
 
 
