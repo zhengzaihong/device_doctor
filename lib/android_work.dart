@@ -31,6 +31,15 @@ class AndroidWork {
   /// 判断是否在root环境下
   Future<dynamic> isRootEnv() async => await _channel.invokeMethod('isRootEnv');
 
+  /// 获取签名信息
+  /// 如果是在 Android 9.0 及以上版本,需要动态申请  PACKAGE_USAGE_STATS 权限。
+  /// 如果是在 Android 11.0 及以上版本,需要动态申请 QUERY_ALL_PACKAGES  权限。
+  /// type MD5 或者 SHA-1
+  Future<dynamic> getSignatures(String type) async => await _channel.invokeMethod('getSignature',{
+    "type":type
+  });
+
+
   /// 获取Android版本
   Future<dynamic> get platformVersion async {
     return await _channel.invokeMethod('getPlatformVersion');

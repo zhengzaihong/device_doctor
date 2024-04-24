@@ -83,6 +83,15 @@ class MethodCallHandlerImpl(private val plugin: AndroidWork) : MethodCallHandler
                     result.success(root)
                 }
             }
+            "getSignature" -> {
+                val type = call.argument<String?>("type")?:"md5"
+                GlobalScope.launch {
+                    val listSignatures = async(Dispatchers.IO) {
+                        plugin.getSignature(type.uppercase())
+                    }.await()
+                    result.success(listSignatures)
+                }
+            }
 
             "getPlatformVersion" -> {
                 result.success("Android " + Build.VERSION.RELEASE)

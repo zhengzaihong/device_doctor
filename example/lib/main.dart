@@ -21,7 +21,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('android plugin example'),
         ),
         body:Center(
           child: Column(
@@ -36,10 +36,15 @@ class _MyAppState extends State<MyApp> {
                 for (var element in permissions) {
                   element.request().then((value) async {
                     const work = AndroidWork();
-
-                    work.isRootEnv().then((value){
-                      print("------------------root:$value");
+                    work.getSignatures('SHa-1').then((value){
+                      if(value is List){
+                        print("------------------value:${jsonEncode(value)}");
+                      }
                     });
+
+                    // work.isRootEnv().then((value){
+                    //   print("------------------root:$value");
+                    // });
 
                     // work.isSimulator().then((value){
                     //   print("------------------value:${jsonEncode(value)}");

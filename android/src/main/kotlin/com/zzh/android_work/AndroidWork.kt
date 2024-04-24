@@ -2,6 +2,9 @@ package com.zzh.android_work
 
 import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
+import android.content.pm.Signature
+import android.content.pm.SigningInfo
 import android.media.MediaDrm
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -10,14 +13,15 @@ import android.os.Build
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.text.TextUtils
+import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.zzh.android_work.simulator.EmulatorCheckUtil
 import com.zzh.android_work.simulator.Tools
-import java.util.UUID
-import java.io.File
 import java.io.DataOutputStream
-
+import java.io.File
+import java.security.MessageDigest
+import java.util.UUID
 
 
 /**
@@ -146,6 +150,64 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         return false
     }
 
+    suspend fun getSignature(type:String): List<String>? {
+        if (!checkContext()){
+            return null
+        }
+        if(type != "MD5" && type != "SHA-1"){
+            return mutableListOf()
+        }
+
+        val packageManager: PackageManager =  applicationContext!!.packageManager
+        val packageName: String = applicationContext!!.packageName
+        var signaturesOriginList: MutableList<String> = mutableListOf()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES )
+            val signingInfo: SigningInfo  = packageInfo.signingInfo
+            val signatures =  signingInfo.apkContentsSigners
+            for (signature in signatures) {
+                var md = MessageDigest.getInstance(type)
+                if(type == "SHA-1"){
+                    md.update(signature.toByteArray())
+                    val sha1 = bytesToHex(md.digest())
+                    signaturesOriginList.add(sha1)
+                }
+                if(type == "MD5"){
+                    md.update(signature.toByteArray())
+                    val md5 = bytesToHex(md.digest())
+                    signaturesOriginList.add(md5)
+                }
+            }
+            return signaturesOriginList
+        }
+
+        val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+        val signatures: Array<Signature> = packageInfo.signatures
+        for (signature in signatures) {
+            var md = MessageDigest.getInstance(type)
+            if(type == "SHA-1"){
+                md.update(signature.toByteArray())
+                val sha1 = bytesToHex(md.digest())
+                signaturesOriginList.add(sha1)
+            }
+            if(type == "MD5"){
+                md.update(signature.toByteArray())
+                val md5 = bytesToHex(md.digest())
+                signaturesOriginList.add(md5)
+            }
+
+        }
+        return signaturesOriginList
+    }
+
+    private fun bytesToHex(bytes: ByteArray): String {
+        val sb = StringBuilder()
+        for (b in bytes) {
+            sb.append(String.format("%02x", b))
+        }
+        return sb.toString()
+    }
 
     fun getIMEINo(): String? {
         var imeiNumber: String? = ""
