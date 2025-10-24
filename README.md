@@ -1,3 +1,8 @@
+
+[![pub package](https://img.shields.io/pub/v/android_work.svg)](https://pub.dev/packages/android_work)
+[![GitHub stars](https://img.shields.io/github/stars/zhengzaihong/android_work.svg?style=social)](https://github.com/zhengzaihong/android_work)
+[![license](https://img.shields.io/github/license/zhengzaihong/android_work)](LICENSE)
+
 ## 此库主要针对Android原生底层能力实现提供flutter方法，ios实现可能相对较少。
 
 ### 使用说明：
