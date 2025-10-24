@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:android_work_forzzh/android_work.dart';
+import 'package:android_work/android_work.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 void main() {

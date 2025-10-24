@@ -1,71 +1,68 @@
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
-}
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-//apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-//apply from: "./resolve_dependencies.gradle"
-
+group = "com.zzh.android_work"
+version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = '1.6.10'
+    ext.kotlin_version = "1.7.10"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath("com.android.tools.build:gradle:7.3.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
 
-rootProject.allprojects {
+allprojects {
     repositories {
         google()
         mavenCentral()
     }
 }
 
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
 android {
-    compileSdk 34
+    if (project.android.hasProperty("namespace")) {
+        namespace = "com.zzh.android_work"
+    }
+
+    compileSdk = 34
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 
     sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
+        main.java.srcDirs += "src/main/kotlin"
+        test.java.srcDirs += "src/test/kotlin"
     }
 
     defaultConfig {
-        minSdkVersion 17
+        minSdk = 21
     }
 
-}
+    dependencies {
+        testImplementation("org.jetbrains.kotlin:kotlin-test")
+        testImplementation("org.mockito:mockito-core:5.0.0")
+    }
 
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
 
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.core:core:1.12.0'
-    compileOnly files("$flutterRoot/bin/cache/artifacts/engine/android-arm/flutter.jar")
-    compileOnly 'androidx.annotation:annotation:1.1.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3'
-
+            testLogging {
+               events "passed", "skipped", "failed", "standardOut", "standardError"
+               outputs.upToDateWhen {false}
+               showStandardStreams = true
+            }
+        }
+    }
 }

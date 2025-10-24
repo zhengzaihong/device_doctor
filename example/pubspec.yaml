@@ -17,7 +17,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  android_work_forzzh:
+  android_work:
     # When depending on this package from a real application you should use:
     #   android_work: ^x.y.z
     # See https://dart.dev/tools/pub/dependencies#version-constraints
