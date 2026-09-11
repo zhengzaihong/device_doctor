@@ -1,5 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.zzh.android_work">
-    <uses-permission android:name="android.permission.GET_TASKS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.zzh.android_work">
+    <!-- 检测 VPN/代理所需 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- IMEI/DeviceID 仅在 Android 9 及以下可用，Android 10+ 受限，声明可选；运行时另需用户授权 -->
+    <uses-permission
+        android:name="android.permission.READ_PHONE_STATE"
+        android:maxSdkVersion="28"
+        tools:node="replace" />
+    <!-- 用于获取应用签名/包列表等，无需额外权限；重度包可见性检测由宿主在 Android 11+ 按需声明 QUERY_ALL_PACKAGES -->
 </manifest>

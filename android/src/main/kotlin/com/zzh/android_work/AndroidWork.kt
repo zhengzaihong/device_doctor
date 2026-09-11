@@ -3,8 +3,6 @@ package com.zzh.android_work
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.pm.Signature
-import android.content.pm.SigningInfo
 import android.media.MediaDrm
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -13,28 +11,47 @@ import android.os.Build
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.text.TextUtils
-import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.zzh.android_work.simulator.EmulatorCheckUtil
 import com.zzh.android_work.simulator.Tools
+import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.File
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 
-/**
- * create_user: zhengzaihong
- * email:1096877329@qq.com
- * create_date: 2023/3/31
- * create_time: 14:22
- * describe:
- */
 class AndroidWork(private var activity: Activity?, private var applicationContext: Context?) {
 
     companion object {
         private const val TAG = "AndroidWork"
+        private val SU_PATHS = arrayOf(
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/sbin/su",
+            "/su/bin/su",
+            "/system/sd/xbin/su",
+            "/system/bin/failsafe/su",
+            "/data/local/su",
+            "/data/local/xbin/su",
+            "/data/local/bin/su",
+            "/system/xbin/daemonsu",
+            "/sbin/magisk",
+            "/system/bin/magisk",
+            "/data/adb/magisk/busybox"
+        )
+        private val ROOT_PACKAGES = arrayOf(
+            "com.topjohnwu.magisk",
+            "eu.chainfire.supersu",
+            "com.koushikdutta.superuser",
+            "com.noshufou.android.su",
+            "com.kingroot.kinguser",
+            "com.thirdparty.superuser"
+        )
     }
 
     fun setActivity(activity: Activity?) {
@@ -47,12 +64,17 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
 
     private fun checkContext(): Boolean {
         if (applicationContext == null) {
-            Log.wtf(TAG, "上下文未初始化，请先初始化")
+            Log.w(TAG, "上下文未初始化，请先初始化")
             return false
         }
         return true
     }
 
+    private fun contextOrThrow(): Context {
+        return applicationContext ?: throw IllegalStateException("applicationContext 未初始化，请确认插件已 attach 到引擎")
+    }
+
+    fun requireContext(): Context = contextOrThrow()
 
     fun getSimulatorInfo(): MutableList<Any?>? {
         if (!checkContext()){
@@ -61,7 +83,6 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         return Tools.getSimulatorInfo(applicationContext!!)
     }
 
-    // 检查是否是模拟器 同步
     fun isSimulator(callback: (info: Any) -> Unit) {
         if (!checkContext()){
             return
@@ -73,176 +94,245 @@ class AndroidWork(private var activity: Activity?, private var applicationContex
         if (!checkContext()){
             return false
         }
-        var process:Process?  = null
+        if (Build.TAGS != null && Build.TAGS.contains("test-keys")) return true
+
+        for (path in SU_PATHS) {
+            try { if (File(path).exists()) return true } catch (_: Exception) {}
+        }
+
+        try {
+            val pm = contextOrThrow().packageManager
+            for (pkg in ROOT_PACKAGES) {
+                try { pm.getPackageInfo(pkg, 0); return true } catch (_: PackageManager.NameNotFoundException) {} catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+
+        if (canExecSuWithTimeout()) return true
+        if (whichSuExists()) return true
+
+        return false
+    }
+
+    private fun canExecSuWithTimeout(): Boolean {
+        var process: Process? = null
+        var os: DataOutputStream? = null
         try {
             process = Runtime.getRuntime().exec("su")
-            var os: DataOutputStream = DataOutputStream(process.getOutputStream())
+            os = DataOutputStream(process.outputStream)
             os.writeBytes("echo root\n")
             os.writeBytes("exit\n")
             os.flush()
-            process?.waitFor()
-            if (process?.exitValue() == 0) {
-                return true
-            }
-
-            var file: File = File("/system/bin/su")
-            if (file.exists()) {
-                return true
-            }
-            var buildTags: String? = Build.TAGS
-            if (buildTags != null && buildTags.contains("test-keys")) {
-                return true
-            }
-        } catch (e: Exception) {
-          return false
+            try { os.close() } catch (_: Exception) {}
+            os = null
+            val finished = waitForWithTimeout(process, 900)
+            if (finished && process.exitValue() == 0) return true
+            if (!finished) { try { process.destroy() } catch (_: Exception) {} }
+        } catch (_: Exception) {
         } finally {
-            process?.destroy()
+            try { os?.close() } catch (_: Exception) {}
+            try { process?.destroy() } catch (_: Exception) {}
         }
         return false
     }
 
+    private fun whichSuExists(): Boolean {
+        var p: Process? = null
+        var reader: BufferedReader? = null
+        try {
+            p = Runtime.getRuntime().exec(arrayOf("which", "su"))
+            val finished = waitForWithTimeout(p, 600)
+            reader = BufferedReader(InputStreamReader(p.inputStream, StandardCharsets.UTF_8))
+            val out = reader.readLine()
+            if (!out.isNullOrEmpty() && out.contains("su")) return true
+            if (!finished) { try { p.destroy() } catch (_: Exception) {} }
+        } catch (_: Exception) {
+        } finally {
+            try { reader?.close() } catch (_: Exception) {}
+            try { p?.destroy() } catch (_: Exception) {}
+        }
+        return false
+    }
+
+    private fun waitForWithTimeout(process: Process, timeoutMs: Long): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
+            } else {
+                val t = Thread { try { process.waitFor() } catch (_: InterruptedException) {} }
+                t.start()
+                t.join(timeoutMs)
+                if (t.isAlive) { t.interrupt(); try { process.destroy() } catch (_: Exception) {}; false } else true
+            }
+        } catch (_: Exception) { false }
+    }
 
     suspend fun isProxy(): Boolean {
         if (!checkContext()){
             return false
         }
-        val IS_ICS_OR_LATER = Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH
-        val proxyAddress: String
-        val proxyPort: Int
-        if (IS_ICS_OR_LATER) {
-            val proxySettings =
-                Settings.System.getString(applicationContext!!.contentResolver, "http_proxy")
-            return !TextUtils.isEmpty(proxySettings)
-        } else {
-            proxyAddress = Proxy.getHost(applicationContext!!)
-            proxyPort = Proxy.getPort(applicationContext!!)
-        }
-        return !TextUtils.isEmpty(proxyAddress) && proxyPort != -1
-    }
+        try {
+            val httpHost = System.getProperty("http.proxyHost")
+            val httpPort = System.getProperty("http.proxyPort")
+            if (!httpHost.isNullOrEmpty() && httpHost != "null"
+                && !httpPort.isNullOrEmpty() && httpPort != "-1" && httpPort != "0") return true
+            val httpsHost = System.getProperty("https.proxyHost")
+            if (!httpsHost.isNullOrEmpty() && httpsHost != "null") return true
+        } catch (_: Exception) {}
 
-    suspend fun isOpenVPN(): Boolean? {
-        val connectivityManager =
-            activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val activeNetwork = connectivityManager?.activeNetwork
-            val caps =
-                connectivityManager?.getNetworkCapabilities(activeNetwork)
-            return caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val networks = connectivityManager?.allNetworks
-            networks?.let {
-                for (i in it) {
-                    val caps = connectivityManager.getNetworkCapabilities(i)
-                    if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) {
-                        return true
-                    }
-                }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val cm = contextOrThrow().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val proxyInfo = cm.defaultProxy
+                if (proxyInfo != null && !proxyInfo.host.isNullOrEmpty()) return true
+            } else {
+                @Suppress("DEPRECATION")
+                val host = Proxy.getHost(contextOrThrow())
+                @Suppress("DEPRECATION")
+                val port = Proxy.getPort(contextOrThrow())
+                if (!TextUtils.isEmpty(host) && port != -1) return true
             }
+        } catch (_: Exception) {}
 
-        }
-        val networkInfo = connectivityManager.activeNetworkInfo
-        if (networkInfo != null && networkInfo.isConnected) {
-            return networkInfo.type == ConnectivityManager.TYPE_VPN
-        }
+        try {
+            val legacy = Settings.System.getString(contextOrThrow().contentResolver, "http_proxy")
+            if (!TextUtils.isEmpty(legacy)) return true
+        } catch (_: Exception) {}
+
         return false
     }
 
-    suspend fun getSignature(type:String): List<String>? {
+    suspend fun isOpenVPN(): Boolean {
+        if (!checkContext()) return false
+        return try {
+            val connectivityManager =
+                contextOrThrow().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val activeNetwork = connectivityManager.activeNetwork
+                if (activeNetwork != null) {
+                    val caps = connectivityManager.getNetworkCapabilities(activeNetwork)
+                    if (caps != null) return caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+                }
+                val networks = connectivityManager.allNetworks
+                for (net in networks) {
+                    val caps = connectivityManager.getNetworkCapabilities(net)
+                    if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) return true
+                }
+                return false
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val networks = connectivityManager.allNetworks
+                for (net in networks) {
+                    val caps = connectivityManager.getNetworkCapabilities(net)
+                    if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) return true
+                }
+            }
+            @Suppress("DEPRECATION")
+            val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
+            networkInfo != null && networkInfo.isConnected && networkInfo.type == ConnectivityManager.TYPE_VPN
+        } catch (e: Exception) {
+            Log.w(TAG, "isOpenVPN error", e)
+            false
+        }
+    }
+
+    suspend fun getSignature(type:String): List<String> {
         if (!checkContext()){
-            return null
+            return emptyList()
         }
-        if(type != "MD5" && type != "SHA-1"){
-            return mutableListOf()
+        val normalized = type.trim().uppercase()
+        val digestAlg = when (normalized) {
+            "MD5" -> "MD5"
+            "SHA-1", "SHA1" -> "SHA-1"
+            "SHA-256", "SHA256", "SHA_256" -> "SHA-256"
+            else -> return emptyList()
         }
 
-        val packageManager: PackageManager =  applicationContext!!.packageManager
-        val packageName: String = applicationContext!!.packageName
-        var signaturesOriginList: MutableList<String> = mutableListOf()
+        val pm: PackageManager = contextOrThrow().packageManager
+        val packageName: String = contextOrThrow().packageName
+        val out = LinkedHashSet<String>()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES )
-            val signingInfo: SigningInfo  = packageInfo.signingInfo
-            val signatures =  signingInfo.apkContentsSigners
-            for (signature in signatures) {
-                var md = MessageDigest.getInstance(type)
-                if(type == "SHA-1"){
-                    md.update(signature.toByteArray())
-                    val sha1 = bytesToHex(md.digest())
-                    signaturesOriginList.add(sha1)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                val signingInfo = packageInfo.signingInfo ?: return emptyList()
+                val sigs = signingInfo.apkContentsSigners
+                for (sig in sigs) {
+                    val md = MessageDigest.getInstance(digestAlg)
+                    md.update(sig.toByteArray())
+                    out.add(bytesToHex(md.digest()))
                 }
-                if(type == "MD5"){
-                    md.update(signature.toByteArray())
-                    val md5 = bytesToHex(md.digest())
-                    signaturesOriginList.add(md5)
+            } else {
+                @Suppress("DEPRECATION")
+                val packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                val sigs = packageInfo.signatures ?: return emptyList()
+                for (sig in sigs) {
+                    val md = MessageDigest.getInstance(digestAlg)
+                    md.update(sig.toByteArray())
+                    out.add(bytesToHex(md.digest()))
                 }
             }
-            return signaturesOriginList
+        } catch (e: Exception) {
+            Log.w(TAG, "getSignature error", e)
+            return emptyList()
         }
-
-        val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
-        val signatures: Array<Signature> = packageInfo.signatures
-        for (signature in signatures) {
-            var md = MessageDigest.getInstance(type)
-            if(type == "SHA-1"){
-                md.update(signature.toByteArray())
-                val sha1 = bytesToHex(md.digest())
-                signaturesOriginList.add(sha1)
-            }
-            if(type == "MD5"){
-                md.update(signature.toByteArray())
-                val md5 = bytesToHex(md.digest())
-                signaturesOriginList.add(md5)
-            }
-
-        }
-        return signaturesOriginList
+        return out.toList()
     }
 
     private fun bytesToHex(bytes: ByteArray): String {
-        val sb = StringBuilder()
-        for (b in bytes) {
-            sb.append(String.format("%02x", b))
-        }
+        val sb = StringBuilder(bytes.size * 2)
+        for (b in bytes) sb.append(String.format("%02x", b))
         return sb.toString()
     }
 
     fun getIMEINo(): String? {
-        var imeiNumber: String? = ""
-        val telephonyManager =
-            activity!!.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-
+        if (!checkContext()) return null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            return getDeviceUniqueID()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (telephonyManager?.imei != null) {
-                return telephonyManager.imei
-            }
-        } else {
-            if (telephonyManager?.deviceId != null) {
-                return telephonyManager.deviceId
-            }
+            val drmId = getDeviceUniqueID()
+            if (!drmId.isNullOrEmpty()) return drmId
         }
-        return imeiNumber
+        return try {
+            val telephonyManager =
+                contextOrThrow().getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    val imei = telephonyManager.imei
+                    if (!imei.isNullOrEmpty()) return imei
+                } catch (_: SecurityException) {
+                }
+            }
+            @Suppress("DEPRECATION")
+            try {
+                val deviceId = telephonyManager.deviceId
+                if (!deviceId.isNullOrEmpty()) return deviceId
+            } catch (_: SecurityException) {
+            }
+            getDeviceUniqueID()
+        } catch (e: Exception) {
+            Log.w(TAG, "getIMEINo error", e)
+            getDeviceUniqueID()
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun getDeviceUniqueID(): String? {
         val wideVineUuid = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+        var wvDrm: MediaDrm? = null
         return try {
-            val wvDrm = MediaDrm(wideVineUuid)
+            wvDrm = MediaDrm(wideVineUuid)
             val wideVineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
-            val stringWithSymbols = wideVineId.contentToString()
-            val strWithoutBrackets = stringWithSymbols.replace("\\[".toRegex(), "")
-            val strWithoutBrackets1 = strWithoutBrackets.replace("]".toRegex(), "")
-            val strWithoutComma = strWithoutBrackets1.replace(",".toRegex(), "")
-            val strWithoutHyphen = strWithoutComma.replace("-".toRegex(), "")
-            val strWithoutSpace = strWithoutHyphen.replace(" ".toRegex(), "")
-            strWithoutSpace.substring(0, 15)
+            if (wideVineId == null || wideVineId.isEmpty()) return ""
+            val sb = StringBuilder(wideVineId.size * 2)
+            for (b in wideVineId) sb.append(String.format("%02x", b))
+            val hex = sb.toString().replace(" ", "")
+            if (hex.length >= 15) hex.substring(0, 15) else hex
         } catch (e: Exception) {
+            Log.w(TAG, "getDeviceUniqueID error", e)
             ""
+        } finally {
+            try { wvDrm?.release() } catch (_: Exception) {}
         }
     }
 }

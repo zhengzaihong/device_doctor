@@ -1,4 +1,13 @@
 include: package:flutter_lints/flutter.yaml
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    - avoid_print
+    - avoid_empty_else
+    - avoid_types_as_parameter_names
+    - cancel_subscriptions
+    - close_sinks
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore

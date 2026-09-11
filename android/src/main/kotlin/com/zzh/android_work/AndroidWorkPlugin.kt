@@ -1,7 +1,6 @@
 package com.zzh.android_work
 
 import androidx.annotation.NonNull
-import com.zzh.android_work.utils.Https
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -20,7 +19,6 @@ class AndroidWorkPlugin: FlutterPlugin, ActivityAware {
   private var impl: MethodCallHandlerImpl = MethodCallHandlerImpl(workPlugin)
 
   override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    Https.handleSSLHandshake()
     workPlugin.setApplicationContext(binding.applicationContext)
     workPlugin.setActivity(null)
     impl.startListening(binding.binaryMessenger)
