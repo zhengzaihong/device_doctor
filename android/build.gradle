@@ -1,4 +1,4 @@
-group = "com.zzh.android_work"
+group = "com.zzh.device_doctor"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -26,7 +26,7 @@ apply plugin: "kotlin-android"
 
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace = "com.zzh.android_work"
+        namespace = "com.zzh.device_doctor"
     }
 
     compileSdk = 35

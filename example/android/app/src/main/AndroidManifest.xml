@@ -1,10 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.GET_TASKS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <!-- isProxy/isOpenVPN 需要；模拟器包名扫描演示 Android 11+ 包可见性限制 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 示例演示 deviceIMEINumber 运行时申请；Android 10+ 实际不可得 -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Android 11+ 演示完整包名扫描命中；Play 上架需合规理由 -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission"
+        xmlns:tools="http://schemas.android.com/tools" />
 
     <application
-        android:label="android_work_example"
+        android:label="device_doctor_example"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

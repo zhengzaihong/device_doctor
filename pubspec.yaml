@@ -1,15 +1,17 @@
-name: android_work
-description: "Android 真机/模拟器、Root、代理/VPN、APK 签名与设备信息检测的 Flutter 插件（风控组件）。"
-version: 0.2.0
-homepage: https://github.com/zhengzaihong/android_work
-repository: https://github.com/zhengzaihong/android_work
-issue_tracker: https://github.com/zhengzaihong/android_work/issues
+name: device_doctor
+description: "跨平台设备环境检测：模拟器/虚拟机、代理/VPN、Root/越狱、签名与设备信息。Android 深度检测 + iOS/Windows/macOS/Linux/Web Dart 回退。"
+version: 1.0.0
+homepage: https://github.com/zhengzaihong/device_doctor
+repository: https://github.com/zhengzaihong/device_doctor
+issue_tracker: https://github.com/zhengzaihong/device_doctor/issues
 topics:
   - android
+  - ios
+  - device
   - emulator
-  - root
   - vpn
   - proxy
+  - root
 
 environment:
   sdk: '>=3.4.4 <4.0.0'
@@ -29,7 +31,13 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.zzh.android_work
-        pluginClass: AndroidWorkPlugin
+        package: com.zzh.device_doctor
+        pluginClass: DeviceDoctorPlugin
       ios:
-        pluginClass: AndroidWorkPlugin
+        pluginClass: DeviceDoctorPlugin
+      windows:
+        dartPluginClass: DeviceDoctorWindows
+      linux:
+        dartPluginClass: DeviceDoctorLinux
+      macos:
+        dartPluginClass: DeviceDoctorMacOS

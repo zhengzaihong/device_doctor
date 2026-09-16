@@ -1,19 +1,13 @@
 import Flutter
 import UIKit
 
-public class AndroidWorkPlugin: NSObject, FlutterPlugin {
-  public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "android_work", binaryMessenger: registrar.messenger())
-    let instance = AndroidWorkPlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
-  }
+/// 兼容类：历史 iOS 注册类名 `AndroidWorkPlugin`（0.2.x 及更早宿主的
+/// GeneratedPluginRegistrant 仍按名注册）。行为完全等同 [DeviceDoctorPlugin]。
+@available(*, deprecated, renamed: "DeviceDoctorPlugin")
+@objc(AndroidWorkPlugin)
+public class AndroidWorkPlugin: DeviceDoctorPlugin {
 
-  public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
-    case "getPlatformVersion":
-      result("iOS " + UIDevice.current.systemVersion)
-    default:
-      result(FlutterMethodNotImplemented)
-    }
+  public override static func register(with registrar: FlutterPluginRegistrar) {
+    DeviceDoctorPlugin.register(with: registrar)
   }
 }

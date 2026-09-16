@@ -1,12 +1,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.zzh.android_work">
-    <!-- 检测 VPN/代理所需 -->
+    package="com.zzh.device_doctor">
+    <!-- 新增 package，兼容老宿主的 manifest 合并 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- IMEI/DeviceID 仅在 Android 9 及以下可用，Android 10+ 受限，声明可选；运行时另需用户授权 -->
     <uses-permission
         android:name="android.permission.READ_PHONE_STATE"
         android:maxSdkVersion="28"
         tools:node="replace" />
-    <!-- 用于获取应用签名/包列表等，无需额外权限；重度包可见性检测由宿主在 Android 11+ 按需声明 QUERY_ALL_PACKAGES -->
+
+    <!-- Android 11+ 包可见性：允许探测已知模拟器指纹包（不申请 QUERY_ALL_PACKAGES）。
+         宿主自己的 manifest 若声明了 <queries>，合并时取并集，无需改动宿主代码。 -->
+    <queries>
+        <package android:name="com.mumu.launcher" />
+        <package android:name="com.netease.mumu.cloner" />
+        <package android:name="com.netease.mumu.player" />
+        <package android:name="com.nemu.launcher" />
+        <package android:name="com.bignox.app.store.hd" />
+        <package android:name="com.bignox.launcher" />
+        <package android:name="com.ldmnq.launcher" />
+        <package android:name="com.ld.ldplayer" />
+        <package android:name="com.microvirt.launcher" />
+        <package android:name="com.microvirt.market" />
+        <package android:name="com.bluestacks.home" />
+        <package android:name="com.bluestacks.nxt" />
+        <package android:name="com.kaopu001.tiantianserver" />
+        <package android:name="com.genymotion.superuser" />
+        <package android:name="com.topjohnwu.magisk" />
+        <package android:name="me.weishu.kernelsu" />
+    </queries>
 </manifest>
