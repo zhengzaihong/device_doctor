@@ -5,8 +5,6 @@ homepage: https://github.com/zhengzaihong/device_doctor
 repository: https://github.com/zhengzaihong/device_doctor
 issue_tracker: https://github.com/zhengzaihong/device_doctor/issues
 topics:
-  - android
-  - ios
   - device
   - emulator
   - vpn
